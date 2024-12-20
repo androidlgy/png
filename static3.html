@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>省市、可用区和物理机房详细地址</title>
+    <style type="text/css">
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .marker-label {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            padding: 2px 5px;
+            font-size: 12px;
+            position: absolute;
+            transform: translate(-50%, -100%);
+            white-space: nowrap;
+        }
+
+        #search-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            pointer-events: auto;
+        }
+
+        #search-input {
+            padding: 10px 15px;
+            width: 240px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-right: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #search-input:focus {
+            border-color: #4CAF50;
+        }
+
+        #search-button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        #search-button:hover {
+            background: #45a049;
+        }
+
+        .stats-text {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=EWCBZ-5L2L7-7Q5XQ-H3OR4-YU2EZ-33FVG"></script>
+
+<body onload="initMap()">
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="输入省市名称...">
+        <button id="search-button" onclick="searchLocation()">搜索</button>
+        <div class="stats-text">
+            当前展示腾讯云国内专线接入点共计 <span id="total-points">0</span> 个，海外接入点地图待上线
+        </div>
+    </div>
+    <div id="container"></div>
+    <script>
+        var map; // 将map变量提升到全局作用域
+        var coordinates; // 将coordinates变量提升到全局作用域
+
+        function initMap() {
+            var center = new TMap.LatLng(35.8617, 104.1954); // 设置中国中心点坐标
+            map = new TMap.Map("container", {
+                center: center,
+                zoom: 5 // 设置缩放级别
+            });
+
+            // 将coordinates定义移到这里
+            coordinates = [
+                // 北京地区
+                { lat: 39.794678, lng: 116.555750, title: "北京-A-科创", type: "physical", address: "北京市经济技术开发区科创九街十五号" },
+                { lat: 40.118011, lng: 116.527712, title: "北京-B-航信", type: "physical", address: "北京顺义区后沙峪镇中国航信高科技产业园区" },
+                { lat: 39.984120, lng: 116.506078, title: "北京-C-酒仙桥", type: "physical", address: "北京市朝阳区酒仙桥北路甲10号院402号楼德信大厦四层" },
+                { lat: 39.774440, lng: 116.501810, title: "北京-D-中金", type: "physical", address: "北京亦庄经济技术开发区博兴八路1号" },
+                { lat: 40.074407, lng: 116.230556, title: "北京-F-永丰-T", type: "physical", address: "北京市海淀区丰慧中路11号安泰科技园C区" },
+                { lat: 40.211280, lng: 116.540460, title: "北京-G-兆丰", type: "physical", address: "北京市顺义区赵全营镇兆丰产业园兆丰一街甲8号华威家具制造公司园区" },
+                { lat: 40.488299, lng: 115.568674, title: "北京-H-怀来", type: "physical", address: "张家口市怀来县存瑞镇头二营村" },
+                { lat: 39.824461, lng: 116.396879, title: "北京-I-大红门", type: "physical", address: "北京市丰台区大红门久敬庄56号院突破科技园7号楼" },
+                { lat: 40.226233, lng: 116.639211, title: "北京-K-蓝山", type: "physical", address: "北京市顺义区牛汇街1号蓝山机房2号楼" },
+                { lat: 40.117432, lng: 116.527369, title: "北京-L-顺义", type: "physical", address: "北京顺义区后沙峪镇中国航信高科技产业园区" },
+                { lat: 40.331609, lng: 115.849398, title: "北京-M-怀来东园", type: "physical", address: "张家口市怀来县东花园镇大南辛堡村" },
+                { lat: 39.794687, lng: 116.534566, title: "北京-O-同济", type: "physical", address: "北京亦庄经济开发区同济中路15号" },
+                // 北京金融云 (坐标微调以避免重叠)
+                { lat: 40.211380, lng: 116.540560, title: "北京-金融云-B-兆丰", type: "physical", address: "北京市顺义区赵全营镇兆丰产业园兆丰一街甲8号华威家具制造公司园区" },
+                { lat: 40.074507, lng: 116.230656, title: "北京-金融云-A-永丰", type: "physical", address: "北京市海淀区丰慧中路11号安泰科技园" },
+                { lat: 39.794778, lng: 116.555850, title: "北京-金融-C-科创", type: "physical", address: "北京市经济技术开发区科创九街十五号" },
+                { lat: 39.774540, lng: 116.501910, title: "北京-金融-D-中金", type: "physical", address: "北京亦庄经济技术开发区博兴八路1号" },
+                { lat: 40.118111, lng: 116.527812, title: "北京-金融-E-航信", type: "physical", address: "北京顺义区后沙峪镇中国航信高科技产业园区" },
+                { lat: 39.984220, lng: 116.506178, title: "北京-金融-F-酒仙桥", type: "physical", address: "北京市朝阳区酒仙桥北路甲10号院402号楼德信大厦四层" },
+
+                // 上海地区
+                { lat: 31.236438, lng: 121.650998, title: "上海-B-唐镇", type: "physical", address: "上海市浦东新区达秀路51号万国数据中心1层" },
+                { lat: 31.167510, lng: 121.397260, title: "上海-C-腾大", type: "physical", address: "上海市虹梅路1801号c座2层201" },
+                { lat: 31.295054, lng: 121.439515, title: "上海-D-万荣", type: "physical", address: "上海市静安区万荣路1268号C座" },
+                { lat: 31.082025, lng: 121.260146, title: "上海-F-月湖", type: "physical", address: "上海市松江区洞泾镇洞薛路168号" },
+                { lat: 31.288522, lng: 121.053242, title: "上海-G-花桥", type: "physical", address: "苏州市昆山市金中路192号中金数据系统 DC7号楼" },
+                { lat: 31.346621, lng: 121.590123, title: "上海-H-外高桥", type: "physical", address: "上海市外高桥菲拉路55号世纪互联外高桥数据中心" },
+                { lat: 31.043574, lng: 121.238602, title: "上海-K-松江", type: "physical", address: "上海市松江区经济技术开发区文翔路V-58号地块东门" },
+                { lat: 31.478688, lng: 121.366095, title: "上海-L-宝信", type: "physical", address: "上海市宝山区川纪路500号宝之云3号楼（移动罗泾数据中心）" },
+                // 上海金融云 (坐标微调以避免重叠)
+                { lat: 31.236539, lng: 121.651098, title: "上海-金融云-A-唐镇", type: "physical", address: "上海市浦东新区达秀路51号万国数据中心1层" },
+                { lat: 31.481025, lng: 121.372314, title: "上海-金融云-B-宝信", type: "physical", address: "上海市宝山区川纪路500号" },
+                { lat: 31.167610, lng: 121.397360, title: "上海-金融-D-腾大", type: "physical", address: "上海市虹梅路1801号c座2层201" },
+                { lat: 31.049582, lng: 121.222319, title: "上海-金融-E-松江", type: "physical", address: "上海市松江区经济技术开发区文翔路V-58号地块东门" },
+                // 上海自驾云 (坐标微调以避免重叠)
+                { lat: 31.043674, lng: 121.238702, title: "上海-自驾云-A-松江", type: "physical", address: "上海市松江区经济技术开发区文翔路V-58号地块东门" },
+                { lat: 31.087626, lng: 121.264533, title: "上海-自驾云-B-月湖", type: "physical", address: "上海市松江区洞泾镇洞薛路168号" },
+
+                // 深圳地区
+                { lat: 22.725167, lng: 113.925703, title: "深圳-A-光明", type: "physical", address: "深圳市光明新区公明镇鹏森海纳中心3号楼（光侨路与东长路交汇处）" },
+                { lat: 22.504496, lng: 114.050302, title: "深圳-B-福田", type: "physical", address: "中国广东省深圳市福田区红柳道3-1号万国数据中心3号楼" },
+                { lat: 22.522807, lng: 113.935338, title: "深圳-D-滨海", type: "physical", address: "广东省深圳市南山区海天二路33号腾讯滨海大厦北塔7楼" },
+                { lat: 22.730559, lng: 114.386702, title: "深圳-E-坪山", type: "physical", address: "深圳市坪山区兰景北路68号深宇科技园西门" },
+                { lat: 22.718195, lng: 114.363083, title: "深圳-F-荔景", type: "physical", address: "广东省深圳市坪山区深圳出口加工区锦绣西路6号骏德商贸(深圳)有限公司" },
+                // 深圳金融云 (坐标微调以避免重叠)
+                { lat: 22.730663, lng: 114.386808, title: "深圳-金融云-A-坪山", type: "physical", address: "深圳市坪山区兰景北路68号深宇科技园西门" },
+                { lat: 22.705627, lng: 114.072371, title: "深圳-金融云-B-锦绣", type: "physical", address: "深圳市龙华新区五和大道和观平路交汇处(观澜大富社区虎地排85号)锦绣科学园1号楼" },
+                { lat: 22.522907, lng: 113.935438, title: "深圳-金融-D-滨海", type: "physical", address: "广东省深圳市南山区海天二路33号腾讯滨海大厦北塔7楼" },
+                { lat: 22.724921, lng: 114.370419, title: "深圳-金融-E-荔景", type: "physical", address: "广东省深圳市坪山区深圳出口加工区锦绣西路6号骏德商贸(深圳)有限公司" },
+
+                // 广州地区
+                { lat: 23.148791, lng: 113.457876, title: "广州-B-华新园", type: "physical", address: "广州市黄浦区科丰路31号华南新材料创新园G6栋601" },
+                { lat: 23.156421, lng: 113.496760, title: "广州-A-开源路", type: "physical", address: "广州市黄浦区开源大道11号B1栋一楼主机房二0102" },
+                { lat: 22.892925, lng: 113.439541, title: "广州-C-东涌-T", type: "physical", address: "广东省广州市南沙区市南路东涌段26号中国电信数据中心2号楼" },
+                { lat: 23.702440, lng: 112.882623, title: "广州-D-清远", type: "physical", address: "清远市清新区太平镇龙湾一横路腾讯清远清新云计算中心" },
+                { lat: 23.616175, lng: 113.121530, title: "广州-E-清城", type: "physical", address: "广东省清远市清城区清晖南路腾讯清城云计算数据中心（清晖南路和银英公路交界处吊简村旁）7号楼" },
+                { lat: 23.211994, lng: 113.669394, title: "广州-F-南香谷", type: "physical", address: "广州市增城区宁西街仙宁路4号南香谷产业园H栋" },
+
+                // 南京地区
+                { lat: 32.173995, lng: 118.695277, title: "南京-B-学府", type: "physical", address: "中国移动(南京)IDC数据中心（南京市浦口区学府星火路交叉口西150米）一号楼1CR101机房" },
+                { lat: 31.820879, lng: 118.767625, title: "南京-A-吉山", type: "physical", address: "南京市江宁区滨湖东路中国电信（吉山）云计算中心3号楼201机房" },
+                { lat: 32.268494, lng: 119.255885, title: "南京-C-仪征", type: "physical", address: "仪征市经济开发区科研二路（腾讯仪征东升云计算数据中心）1号楼" },
+
+                // 杭州地区
+                { lat: 30.189932, lng: 120.200131, title: "杭州-A-东冠", type: "physical", address: "杭州市滨江区秋溢路288号东冠科技园4号楼" },
+                { lat: 30.250957, lng: 120.073187, title: "杭州-B-西湖", type: "physical", address: "杭州市西湖区西溪路924-7号3113号楼" },
+                { lat: 30.306457, lng: 120.359066, title: "杭州-C-江干", type: "physical", address: "杭州市钱塘新区下沙经济开发区4号大街28-2号-1412-1号楼" },
+
+                // 成都地区
+                { lat: 30.650708, lng: 103.999513, title: "成都-A-西区", type: "physical", address: "成都高新技术产业开发区 (西区) 天盛路99号11号楼" },
+                { lat: 30.675195, lng: 103.886921, title: "成都-B-光华", type: "physical", address: "成都市温江区西部文化城产业园29号楼B栋（原8号楼B栋）2楼" },
+
+                // 重庆地区 (坐标微调以避免重叠)
+                { lat: 29.790833, lng: 106.523072, title: "重庆-A-泰和", type: "physical", address: "重庆市北碚区水土镇高新技术产业园泰和路777号（重庆腾讯云计算数据中心）" },
+                { lat: 29.795209, lng: 106.521398, title: "重庆-B-云福", type: "physical", address: "重庆市北陪区水土镇云汉大道7号两江数据中心(太平洋电信）" },
+
+                // 合肥地区
+                { lat: 31.776891, lng: 117.249369, title: "合肥-A-天都", type: "physical", address: "安徽省合肥市蜀山区繁华大道204号" },
+                { lat: 31.800000, lng: 117.130000, title: "合肥-B-高新", type: "physical", address: "安徽省合肥市肥西县创新大道与香蒲路交口大数据产业园C2一层" },
+
+                // 其他单个城市
+                { lat: 30.686323, lng: 114.169761, title: "武汉-A-临空港", type: "physical", address: "湖北省武汉市东西湖区银柏路67号中国电信临空港数据中心" },
+                { lat: 26.028794, lng: 119.342276, title: "福州-A-仓科", type: "physical", address: "福州市仓山区高昌路1号中国电信东南云地云谷仓山科技园数据中心" },
+                { lat: 36.702390, lng: 117.293930, title: "济南-A-春晖", type: "physical", address: "济南历城区科远路与春晖路交叉口东北100米中国移动数据中心" },
+                { lat: 28.315651, lng: 112.881619, title: "长沙-A-云谷", type: "physical", address: "湖南省长沙市望城区金星北路证通云谷科技园" },
+                { lat: 38.162380, lng: 114.626548, title: "石家庄-A-常山", type: "physical", address: "石家庄市正定县崇因路常山云数据中心" },
+                { lat: 41.762361, lng: 123.272266, title: "沈阳-A-铁西", type: "physical", address: "沈阳市经济技术开发区三号街10号路10甲3号" },
+                { lat: 34.292491, lng: 108.706552, title: "西安-A-西咸", type: "physical", address: "陕西省咸阳市西咸新区沣西新城秦皇大道与康定路十字西南角，陕西移动西咸数据中心" },
+                { lat: 34.803434, lng: 113.485243, title: "郑州-A-高新", type: "physical", address: "郑州市高新区科学大道雪兰路中国移动通信高新区数据中心" },
+                { lat: 37.729713, lng: 112.598012, title: "太原-A-泽信", type: "physical", address: "山西太原小店区经济技术开发区泽信街山西移动数据中心" },
+                { lat: 39.110512, lng: 117.548402, title: "天津-C-高新区", type: "physical", address: "天津市滨海新区高新区神州大道与高新八路交口腾讯高新云数据中心" }
+            ];
+
+            document.getElementById('total-points').textContent = coordinates.length;
+
+            // 创建点聚合
+            var markerCluster = new TMap.MarkerCluster({
+                id: 'marker-layer',
+                map: map,
+                styles: [{
+                    url: '腾讯云.png',  // 直接使用文件名
+                    width: 32,
+                    height: 32,
+                    anchor: { x: 16, y: 16 },
+                    textColor: '#000000',
+                    textSize: 13,
+                    offset: { x: 0, y: 0 }
+                }],
+                geometries: coordinates.map(coord => ({
+                    "id": coord.title,
+                    "position": new TMap.LatLng(coord.lat, coord.lng),
+                    "properties": {
+                        "title": coord.title,
+                        "address": coord.address
+                    }
+                }))
+            });
+
+            // 监听聚合标记的放大事件
+            markerCluster.on("cluster_changed", function () {
+                // 清除之前的标签
+                document.querySelectorAll('.marker-label').forEach(label => label.remove());
+
+                // 获取当前缩放级别
+                var currentZoom = map.getZoom();
+
+                // 获取聚合的标记
+                var clusters = markerCluster.getClusters();
+                clusters.forEach(cluster => {
+                    if (cluster.geometries.length === 1) {
+                        // 只有一个标记时，显示标签
+                        var label = document.createElement('div');
+                        label.className = 'marker-label';
+                        
+                        // 根据缩放级别决定是否显示详细地址
+                        if (currentZoom >= 10) {
+                            label.innerText = cluster.geometries[0].properties.title + " - " + cluster.geometries[0].properties.address;
+                        } else {
+                            label.innerText = cluster.geometries[0].properties.title;
+                        }
+
+                        // 计算标签位置
+                        var position = map.projectToContainer(cluster.geometries[0].position);
+                        label.style.left = position.getX() + 'px';
+                        label.style.top = position.getY() + 'px';
+
+                        // 添加标签到地图容器
+                        map.getContainer().appendChild(label);
+                    }
+                });
+            });
+
+            // 监听地图缩放事件，更新标签位置和内容
+            map.on('zoomend', function () {
+                var currentZoom = map.getZoom();
+                
+                document.querySelectorAll('.marker-label').forEach(label => {
+                    var title = label.innerText.split(" - ")[0];
+                    var marker = coordinates.find(coord => coord.title === title);
+                    if (marker) {
+                        // 更新位置
+                        var position = map.projectToContainer(new TMap.LatLng(marker.lat, marker.lng));
+                        label.style.left = position.getX() + 'px';
+                        label.style.top = position.getY() + 'px';
+                        
+                        // 更新内容
+                        if (currentZoom >= 10) {
+                            label.innerText = marker.title + " - " + marker.address;
+                        } else {
+                            label.innerText = marker.title;
+                        }
+                    }
+                });
+            });
+        }
+
+        function searchLocation() {
+            var searchText = document.getElementById('search-input').value.trim().toLowerCase();
+            if (!searchText) {
+                alert('请输入省市名称');
+                return;
+            }
+
+            // 在已有的坐标数据中查找匹配的位置
+            var matchedLocations = coordinates.filter(coord => 
+                coord.title.toLowerCase().includes(searchText) || 
+                coord.address.toLowerCase().includes(searchText)
+            );
+
+            if (matchedLocations.length > 0) {
+                // 找到匹配的位置，将地图中心���置为第一个匹配位置
+                var firstMatch = matchedLocations[0];
+                map.setCenter(new TMap.LatLng(firstMatch.lat, firstMatch.lng));
+                map.setZoom(10);
+            } else {
+                alert('未找到相关的专线接入点');
+            }
+        }
+
+        // 加回车键搜索功能
+        document.getElementById('search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLocation();
+            }
+        });
+    </script>
+</body>
+
+</html>
